@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.dvc/cache
+artifacts
+model/model.h5
+research
+logs
+tests
+*.ipynb
