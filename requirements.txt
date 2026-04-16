@@ -6,4 +6,5 @@ PyYAML==6.0.3
 Pillow==11.3.0
 numpy==1.23.5; python_version < "3.12"
 numpy>=1.26,<2.2; python_version >= "3.12"
+ai-edge-litert==2.1.4; python_version >= "3.12"
 setuptools<81

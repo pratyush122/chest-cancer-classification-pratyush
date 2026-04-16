@@ -66,6 +66,7 @@ class ConfigurationManager:
             params_is_augmentation=self.params.AUGMENTATION,
             params_image_size=self.params.IMAGE_SIZE,
             params_random_seed=self.params.RANDOM_SEED,
+            params_validation_split=self.params.VALIDATION_SPLIT,
         )
 
     def get_evaluation_config(self) -> EvaluationConfig:
@@ -85,4 +86,6 @@ class ConfigurationManager:
             all_params=dict(self.params),
             params_image_size=self.params.IMAGE_SIZE,
             params_batch_size=self.params.BATCH_SIZE,
+            params_random_seed=self.params.RANDOM_SEED,
+            params_validation_split=self.params.VALIDATION_SPLIT,
         )

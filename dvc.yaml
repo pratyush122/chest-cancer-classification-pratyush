@@ -49,6 +49,7 @@ stages:
       - BATCH_SIZE
       - AUGMENTATION
       - RANDOM_SEED
+      - VALIDATION_SPLIT
     outs:
       - artifacts/training/model.h5
 
@@ -67,15 +68,19 @@ stages:
     params:
       - IMAGE_SIZE
       - BATCH_SIZE
+      - RANDOM_SEED
+      - VALIDATION_SPLIT
     metrics:
     - scores.json:
         cache: false
 
 
-  lightweight_export:
-    cmd: python scripts/train_lightweight_model.py
+  tflite_export:
+    cmd: python scripts/export_tflite_model.py
     deps:
-      - scripts/train_lightweight_model.py
+      - scripts/export_tflite_model.py
+      - artifacts/training/model.h5
       - artifacts/data_ingestion/Chest-CT-Scan-data
     outs:
-      - model/lightweight_model.json
+      - model/model.tflite
+      - model/inference_profile.json

@@ -12,7 +12,7 @@ from flask_cors import CORS, cross_origin
 from PIL import Image, UnidentifiedImageError
 
 from cnnClassifier import PROJECT_AUTHOR, logger
-from cnnClassifier.pipeline.prediction import PredictionPipeline
+from cnnClassifier.pipeline.prediction import PredictionPipeline, UnsupportedImageError
 from cnnClassifier.utils.common import ImageDecodeError, decodeImage
 
 load_dotenv()
@@ -83,8 +83,8 @@ def home():
 def health_route():
     predictor = inference_service.predictor
     model_path = (
-        predictor.lightweight_model_path
-        if predictor.backend == "lightweight"
+        predictor.tflite_model_path
+        if predictor.backend == "tflite"
         else predictor.model_path
     )
     return jsonify(
@@ -105,8 +105,8 @@ def health_route():
 def model_info_route():
     predictor = inference_service.predictor
     model_path = (
-        predictor.lightweight_model_path
-        if predictor.backend == "lightweight"
+        predictor.tflite_model_path
+        if predictor.backend == "tflite"
         else predictor.model_path
     )
     payload = {
@@ -115,7 +115,8 @@ def model_info_route():
         "model_path": model_path,
         "model_available": os.path.exists(model_path),
         "local_training_model_path": predictor.model_path,
-        "lightweight_model_path": predictor.lightweight_model_path,
+        "tflite_model_path": predictor.tflite_model_path,
+        "inference_profile_path": predictor.inference_profile_path,
         "train_available": not RUNNING_ON_VERCEL,
     }
     return jsonify(payload)
@@ -193,6 +194,13 @@ def predict_route():
             extra={"trace_id": g.trace_id},
         )
         return jsonify({"error": "Invalid image payload.", "message": str(error)}), 400
+    except UnsupportedImageError as error:
+        logger.warning(
+            "Unsupported prediction image: %s",
+            error,
+            extra={"trace_id": g.trace_id},
+        )
+        return jsonify({"error": "Unsupported image domain.", "message": str(error)}), 422
     except Exception as error:
         logger.exception("Prediction failed.", extra={"trace_id": g.trace_id})
         return jsonify({"error": "Prediction failed.", "message": str(error)}), 500

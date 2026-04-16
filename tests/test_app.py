@@ -44,7 +44,7 @@ def test_model_info_reports_active_backend():
     payload = response.get_json()
     assert payload["author"] == "Pratyush Mishra"
     assert payload["model_available"] is True
-    assert payload["backend"] in {"tensorflow", "lightweight"}
+    assert payload["backend"] in {"tensorflow", "tflite"}
 
 
 def test_predict_requires_image_payload():
@@ -97,6 +97,24 @@ def test_predict_rejects_non_image_payload():
 
     assert response.status_code == 400
     assert response.get_json()["error"] == "Invalid image payload."
+
+
+def test_predict_rejects_supported_but_non_ct_image(monkeypatch):
+    class FakePredictor:
+        def predict(self):
+            raise app_module.UnsupportedImageError("Not a chest CT scan.")
+
+    monkeypatch.setattr(
+        app_module.inference_service,
+        "create_predictor",
+        lambda input_image_path: FakePredictor(),
+    )
+    client = app_module.app.test_client()
+
+    response = client.post("/predict", json={"image": _encoded_png()})
+
+    assert response.status_code == 422
+    assert response.get_json()["error"] == "Unsupported image domain."
 
 
 def test_train_get_reports_availability():

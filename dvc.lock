@@ -13,12 +13,12 @@ stages:
       size: 1954
     - path: src/cnnClassifier/config/configuration.py
       hash: md5
-      md5: 796fb7ed94b512b97d0d2c9dd13af867
-      size: 3764
+      md5: 8fb644a13fb9b768c88ff736ab66139c
+      size: 3952
     - path: src/cnnClassifier/entity/config_entity.py
       hash: md5
-      md5: 4e237586702b522dfec59d66443e9694
-      size: 988
+      md5: e2c6e5233f782208e6c941257d86267a
+      size: 1086
     - path: src/cnnClassifier/pipeline/stage_01_data_ingestion.py
       hash: md5
       md5: 5a24c8e8f35413026b723a923ab3cc5d
@@ -46,12 +46,12 @@ stages:
       size: 2122
     - path: src/cnnClassifier/config/configuration.py
       hash: md5
-      md5: 796fb7ed94b512b97d0d2c9dd13af867
-      size: 3764
+      md5: 8fb644a13fb9b768c88ff736ab66139c
+      size: 3952
     - path: src/cnnClassifier/entity/config_entity.py
       hash: md5
-      md5: 4e237586702b522dfec59d66443e9694
-      size: 988
+      md5: e2c6e5233f782208e6c941257d86267a
+      size: 1086
     - path: src/cnnClassifier/pipeline/stage_02_prepare_base_model.py
       hash: md5
       md5: 81cbb3ca39daf4c404c955f15b6c2942
@@ -96,16 +96,16 @@ stages:
       size: 569
     - path: src/cnnClassifier/components/model_trainer.py
       hash: md5
-      md5: 7f1efe6d6252b50cf63e367e70ead80f
-      size: 2618
+      md5: 0b1efd7fe066cf5cbe951622fc6d2264
+      size: 3536
     - path: src/cnnClassifier/config/configuration.py
       hash: md5
-      md5: 796fb7ed94b512b97d0d2c9dd13af867
-      size: 3764
+      md5: 8fb644a13fb9b768c88ff736ab66139c
+      size: 3952
     - path: src/cnnClassifier/entity/config_entity.py
       hash: md5
-      md5: 4e237586702b522dfec59d66443e9694
-      size: 988
+      md5: e2c6e5233f782208e6c941257d86267a
+      size: 1086
     - path: src/cnnClassifier/pipeline/stage_03_model_trainer.py
       hash: md5
       md5: c33e23d2c123f157b2ab007c8e9d938f
@@ -116,18 +116,19 @@ stages:
       size: 3744
     params:
       params.yaml:
-        AUGMENTATION: false
+        AUGMENTATION: true
         BATCH_SIZE: 16
-        EPOCHS: 3
+        EPOCHS: 6
         IMAGE_SIZE:
         - 224
         - 224
         - 3
         RANDOM_SEED: 42
+        VALIDATION_SPLIT: 0.2
     outs:
     - path: artifacts/training/model.h5
       hash: md5
-      md5: 8bdff8371a93cf942b2e99409dc37107
+      md5: cfa1964756db4a1f9cf237161c31171f
       size: 59540824
   evaluation:
     cmd: python -m cnnClassifier.pipeline.stage_04_model_evaluation
@@ -139,7 +140,7 @@ stages:
       nfiles: 343
     - path: artifacts/training/model.h5
       hash: md5
-      md5: 8bdff8371a93cf942b2e99409dc37107
+      md5: cfa1964756db4a1f9cf237161c31171f
       size: 59540824
     - path: config/config.yaml
       hash: md5
@@ -147,16 +148,16 @@ stages:
       size: 569
     - path: src/cnnClassifier/components/model_evaluation_mlflow.py
       hash: md5
-      md5: 3171c72b20b7d7fca0604b9f3329f898
-      size: 2499
+      md5: a0c09abb39be7a2578c2b83dbde08411
+      size: 7725
     - path: src/cnnClassifier/config/configuration.py
       hash: md5
-      md5: 796fb7ed94b512b97d0d2c9dd13af867
-      size: 3764
+      md5: 8fb644a13fb9b768c88ff736ab66139c
+      size: 3952
     - path: src/cnnClassifier/entity/config_entity.py
       hash: md5
-      md5: 4e237586702b522dfec59d66443e9694
-      size: 988
+      md5: e2c6e5233f782208e6c941257d86267a
+      size: 1086
     - path: src/cnnClassifier/pipeline/stage_04_model_evaluation.py
       hash: md5
       md5: f0c3bd244fe191b94720ca7e0ad09243
@@ -172,25 +173,35 @@ stages:
         - 224
         - 224
         - 3
+        RANDOM_SEED: 42
+        VALIDATION_SPLIT: 0.2
     outs:
     - path: scores.json
       hash: md5
-      md5: 2256937a6bd0aa129275cad4468d2870
-      size: 59
-  lightweight_export:
-    cmd: python scripts/train_lightweight_model.py
+      md5: a07003fb168aeef2420e9feffd540623
+      size: 1270
+  tflite_export:
+    cmd: python scripts/export_tflite_model.py
     deps:
     - path: artifacts/data_ingestion/Chest-CT-Scan-data
       hash: md5
       md5: 904fa45d934ce879b3b1933dca6cb2f1.dir
       size: 49247431
       nfiles: 343
-    - path: scripts/train_lightweight_model.py
+    - path: artifacts/training/model.h5
       hash: md5
-      md5: 622b838b6ea50ba04697f327696b3520
-      size: 3008
+      md5: cfa1964756db4a1f9cf237161c31171f
+      size: 59540824
+    - path: scripts/export_tflite_model.py
+      hash: md5
+      md5: 6bd454b760d4dc74de18d16895df06db
+      size: 2246
     outs:
-    - path: model/lightweight_model.json
+    - path: model/inference_profile.json
       hash: md5
-      md5: db6cf2e1707e426e2823635b40a2ed7b
-      size: 1606
+      md5: fb2485ae98476255c94f201bc7fc4987
+      size: 2413
+    - path: model/model.tflite
+      hash: md5
+      md5: 15632268e9a5d9529bd73739e5dd483a
+      size: 14837600

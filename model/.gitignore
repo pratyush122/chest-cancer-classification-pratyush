@@ -1,1 +1,2 @@
-/lightweight_model.json
+/model.tflite
+/inference_profile.json
