@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Pratyush Mishra">
-  <meta name="application-name" content="Pratyush Mishra Chest Cancer Classifier">
-  <title>Pratyush Mishra | Chest Cancer Classifier</title>
+  <meta name="application-name" content="Chest Cancer Classification">
+  <title>Chest Cancer Classification</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -16,8 +16,7 @@
     body::before{content:"";position:fixed;inset:0;background:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:88px 88px;mask-image:radial-gradient(circle at center,black 45%,transparent 100%);opacity:.35;pointer-events:none}
     a{text-decoration:none;color:inherit} img{max-width:100%;display:block}
     .topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px clamp(20px,4vw,42px);background:rgba(7,17,31,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
-    .brand{display:flex;gap:14px;align-items:center}.mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(118,215,255,.22),rgba(74,174,255,.08));border:1px solid rgba(118,215,255,.28);font-family:"Sora",sans-serif;font-weight:700;letter-spacing:.08em}
-    .brand strong,.eyebrow,.metric span,.pill,.meta-label,.footer{font-family:"Sora",sans-serif}.brand small{display:block;color:var(--muted);margin-top:4px}
+    .brand{display:flex;gap:14px;align-items:center}.brand strong,.eyebrow,.metric span,.pill,.meta-label,.footer{font-family:"Sora",sans-serif}.brand strong{font-size:1.15rem;letter-spacing:-.03em}
     .nav{display:flex;gap:20px;color:var(--muted)} .nav a:hover{color:var(--text)}
     .hero{min-height:calc(100svh - 78px);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);gap:34px;align-items:center;padding:44px clamp(20px,4vw,42px) 70px}
     .eyebrow{display:inline-flex;gap:10px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid rgba(118,215,255,.18);background:rgba(11,24,48,.48);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase}
@@ -60,11 +59,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="mark">PM</div>
-      <div>
-        <strong>Pratyush Mishra</strong>
-        <small>Deep-learning chest CT classification portfolio</small>
-      </div>
+      <strong>Chest Cancer Classification</strong>
     </div>
     <nav class="nav">
       <a href="#predict">Predict</a>
@@ -194,7 +189,7 @@
         <article class="about" data-reveal>
           <div class="badge">About Me</div>
           <h3 class="about-name">Pratyush Mishra</h3>
-          <p>I like building machine-learning products that feel engineered end to end: the training pipeline, the deployment story, and the interface quality all matter.</p>
+          <p>I build applied machine-learning and data products with a focus on reproducible pipelines, dependable deployment, and clean user experience.</p>
           <div class="rings">
             <div class="ring"><strong>ML</strong><span>TensorFlow, DVC, evaluation, reproducibility</span></div>
             <div class="ring"><strong>Product</strong><span>Readable UX and polished interaction design</span></div>
@@ -203,11 +198,11 @@
         </article>
 
         <article class="about" data-reveal>
-          <h3>Why the UI feels more senior</h3>
+          <h3>Professional Profile</h3>
           <div class="about-lines">
-            <div class="about-line">The first screen acts like a product poster with one dominant idea instead of a pile of widgets.</div>
-            <div class="about-line">Motion is restrained and intentional, using reveal timing, glow drift, and a subtle scan effect to build atmosphere.</div>
-            <div class="about-line">The copy is short, technical where it matters, and arranged so the page scans quickly on both desktop and mobile.</div>
+            <div class="about-line">My work centers on turning technical ideas into usable software, with projects spanning computer vision, analytics, and retrieval-based applications.</div>
+            <div class="about-line">I care about the full delivery path: training quality, evaluation discipline, deployment reliability, and interfaces that communicate clearly to real users.</div>
+            <div class="about-line">Across Python, TensorFlow, SQL, Flask, and modern deployment workflows, I aim to build systems that are practical, maintainable, and ready to be presented professionally.</div>
           </div>
         </article>
       </div>
