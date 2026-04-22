@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Pratyush Mishra">
-  <meta name="application-name" content="Chest Cancer Classification">
-  <title>Chest Cancer Classification</title>
+  <meta name="application-name" content="Medical Image Classifier">
+  <title>Medical Image Classifier | Chest CT + ECG</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -37,6 +37,7 @@
     .meta{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-top:16px;padding:15px 18px;border-radius:22px;background:rgba(7,17,31,.7);border:1px solid rgba(157,195,255,.12)}
     .meta-label{display:block;color:var(--muted);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.meta-name{font-weight:700}.meta-sub{margin-top:4px;color:var(--muted);font-size:.92rem}.status{padding:10px 14px;border-radius:999px;background:rgba(118,215,255,.08);border:1px solid rgba(118,215,255,.16);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase}.status.ready{background:rgba(136,244,200,.1);border-color:rgba(136,244,200,.28);color:#d9ffee}
     .toolbar,.chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}.chip{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid rgba(157,195,255,.12);color:var(--muted);font-size:.84rem}
+    .select{appearance:none;border:1px solid rgba(157,195,255,.2);border-radius:16px;background:rgba(7,17,31,.88);color:var(--text);padding:12px 16px;font:inherit;min-width:210px}
     .results{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr);gap:18px;margin-top:18px;padding:20px;border-radius:24px;background:rgba(7,17,31,.54);border:1px solid rgba(157,195,255,.12)}
     .preview{min-height:190px;border-radius:20px;background:linear-gradient(145deg,rgba(118,215,255,.08),rgba(255,255,255,.02));border:1px solid rgba(157,195,255,.1);display:grid;place-items:center;overflow:hidden}.preview span{padding:18px;text-align:center;color:var(--muted);line-height:1.6}.copy h3{margin:0 0 8px;font-size:1.08rem}.copy p{margin:0 0 12px;color:var(--muted);line-height:1.7}.copy pre{margin:0;padding:16px;border-radius:18px;background:#07111f;border:1px solid rgba(157,195,255,.08);color:#dff3ff;font-size:.88rem;line-height:1.7;white-space:pre-wrap;word-break:break-word}
     section{padding:0 clamp(20px,4vw,42px)} .block{max-width:1320px;margin:0 auto 28px}.head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:24px}.head h2{margin:0;font-size:clamp(1.9rem,3vw,3rem)} .head p{margin:0;max-width:540px;color:var(--muted);line-height:1.8}
@@ -59,7 +60,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <strong>Chest Cancer Classification</strong>
+      <strong>Medical Image Classifier</strong>
     </div>
     <nav class="nav">
       <a href="#predict">Predict</a>
@@ -71,16 +72,16 @@
   <main>
     <section class="hero" id="predict">
       <div data-reveal>
-        <div class="eyebrow">Clinical imaging experience</div>
-        <h1>Chest CT intelligence <span>with product-level polish.</span></h1>
-        <p class="lead">A refined upload experience for chest cancer classification built around a real deep-learning pipeline, safer input handling, and a cleaner validation story.</p>
+        <div class="eyebrow">Multi-modal deep learning</div>
+        <h1>One project for <span>Chest CT and ECG diagnosis.</span></h1>
+        <p class="lead">A combined final-year project that classifies chest CT scans for lung cancer screening and ECG images for cardiovascular condition detection through a single polished interface.</p>
         <div class="points">
-          <article class="point"><strong>Deep Learning</strong><span>TensorFlow VGG16 training with a TensorFlow Lite deployment export.</span></article>
-          <article class="point"><strong>Legit Metrics</strong><span>Duplicate-aware validation and expanded score reporting.</span></article>
-          <article class="point"><strong>Safer Intake</strong><span>Unsupported images are rejected before they receive a disease label.</span></article>
+          <article class="point"><strong>2 Modalities</strong><span>Switch between chest CT cancer analysis and ECG cardiac-condition classification.</span></article>
+          <article class="point"><strong>Real Pipelines</strong><span>TensorFlow training locally with TensorFlow Lite exports for deployment-ready inference.</span></article>
+          <article class="point"><strong>Safer Intake</strong><span>Each modality validates image-domain fit before returning a diagnostic class.</span></article>
         </div>
         <div class="actions">
-          <a class="btn primary" href="#predict-panel">Start With a Scan</a>
+          <a class="btn primary" href="#predict-panel">Start Prediction</a>
           <a class="btn secondary" href="#about">Meet the Builder</a>
         </div>
       </div>
@@ -88,20 +89,25 @@
       <aside class="panel" id="predict-panel" data-reveal>
         <div class="panel-top">
           <div>
-            <h2>Upload a CT image</h2>
-            <p>Preview the scan, validate the upload, and run a diagnosis through a cleaner inference workflow.</p>
+            <h2 id="panel-title">Upload a medical image</h2>
+            <p id="panel-description">Choose a modality, preview the image, validate the upload, and run diagnosis through the matching deep-learning pipeline.</p>
           </div>
-          <div class="pill">Production flow</div>
+          <div class="pill">Dual-model flow</div>
         </div>
 
         <form id="upload-data">
+          <div class="toolbar" style="margin-top:0;margin-bottom:16px">
+            <select id="modality-select" class="select" aria-label="Choose medical image modality"></select>
+            <div class="chip" id="modality-chip">Loading modalities</div>
+          </div>
+
           <div class="dropzone" id="dropzone">
-            <div class="viewer" id="video"><img id="photo" alt="Selected chest CT preview"></div>
+            <div class="viewer" id="video"><img id="photo" alt="Selected medical image preview"></div>
             <canvas id="canvas" style="display:none;"></canvas>
             <div class="overlay">
               <div class="overlay-card">
-                <strong>Drop a chest CT image here</strong>
-                <span>PNG, JPG, or JPEG. The interface validates the image before inference begins.</span>
+                <strong id="overlay-title">Drop an image here</strong>
+                <span id="overlay-hint">PNG, JPG, or JPEG. The interface validates the image before inference begins.</span>
               </div>
             </div>
           </div>
@@ -122,7 +128,7 @@
 
           <div class="chips">
             <div class="chip">Deep-learning inference</div>
-            <div class="chip">CT-domain validation</div>
+            <div class="chip">Modality-aware validation</div>
             <div class="chip">Single-image review</div>
           </div>
 
@@ -151,10 +157,10 @@
           <p>The project now reports a more honest scorecard by grouping duplicates before the split and exposing deeper evaluation metrics.</p>
         </div>
         <div class="metrics">
-          <article class="metric" data-reveal><span>Accuracy</span><strong>86%</strong><p>Measured on the cleaned holdout set after duplicate-aware validation.</p></article>
-          <article class="metric" data-reveal><span>Macro F1</span><strong>0.83</strong><p>A stronger signal than raw accuracy when class balance is imperfect.</p></article>
-          <article class="metric" data-reveal><span>ROC AUC</span><strong>0.986</strong><p>The model still ranks the classes well even with room to improve calibration.</p></article>
-          <article class="metric" data-reveal><span>Input Safety</span><strong>422</strong><p>Random or unsupported images now fail fast instead of being labeled as cancer.</p></article>
+          <article class="metric" data-reveal><span>Chest CT Accuracy</span><strong>86%</strong><p>Measured on the duplicate-aware chest CT holdout set after leakage cleanup.</p></article>
+          <article class="metric" data-reveal><span>ECG Accuracy</span><strong>78.7%</strong><p>Validation score from the ECG image classifier across 3 cardiac-condition classes.</p></article>
+          <article class="metric" data-reveal><span>ECG Macro F1</span><strong>0.73</strong><p>Balanced class-aware score for abnormal heartbeat, history of MI, and normal ECG images.</p></article>
+          <article class="metric" data-reveal><span>Input Safety</span><strong>422</strong><p>Unsupported uploads fail fast instead of being forced into a diagnosis.</p></article>
         </div>
       </div>
     </section>
@@ -163,22 +169,22 @@
       <div class="block story-grid">
         <article class="story" data-reveal>
           <h3>What changed in the project</h3>
-          <p>The system now tells one cleaner story from training to deployment.</p>
+          <p>The system now tells one cleaner story from training to deployment across two medical image modalities.</p>
           <div class="list">
-            <div class="item"><div class="num">01</div><div><strong>Deep-learning-only deployment</strong><span>The handcrafted fallback classifier was removed and replaced with a TensorFlow Lite export from the real model.</span></div></div>
-            <div class="item"><div class="num">02</div><div><strong>Duplicate-aware evaluation</strong><span>Validation no longer benefits from exact-copy leakage across train and holdout.</span></div></div>
-            <div class="item"><div class="num">03</div><div><strong>Safer image handling</strong><span>Unsupported uploads are rejected before diagnosis, which fixes the random-image problem.</span></div></div>
+            <div class="item"><div class="num">01</div><div><strong>Chest CT plus ECG</strong><span>The project now supports two diagnostic image types through the same app and deployment surface.</span></div></div>
+            <div class="item"><div class="num">02</div><div><strong>Reusable inference architecture</strong><span>A shared modality registry routes uploads to the correct model, labels, and safety profile.</span></div></div>
+            <div class="item"><div class="num">03</div><div><strong>Safer image handling</strong><span>Each modality rejects unsupported uploads before a disease label is returned.</span></div></div>
           </div>
         </article>
 
         <article class="story" data-reveal>
           <h3>Inference workflow</h3>
-          <p>The user sees a simple surface while the backend does more careful work under the hood.</p>
+          <p>The user sees a simple surface while the backend selects the correct modality-specific model and validation profile.</p>
           <div class="steps">
-            <div class="step"><div class="num">1</div><div><strong>Decode and verify</strong><span>Uploads are decoded safely, validated as images, and size-checked before inference.</span></div></div>
-            <div class="step"><div class="num">2</div><div><strong>Filter unrelated inputs</strong><span>Image statistics are compared against the chest CT distribution to reject obvious non-CT content.</span></div></div>
-            <div class="step"><div class="num">3</div><div><strong>Run the deep model</strong><span>TensorFlow is used for training, while deployment uses TensorFlow Lite from the same learned model.</span></div></div>
-            <div class="step"><div class="num">4</div><div><strong>Return structured output</strong><span>The response includes class, confidence, backend, and probability details in a clean payload.</span></div></div>
+            <div class="step"><div class="num">1</div><div><strong>Choose modality</strong><span>The interface switches between chest CT and ECG image analysis before upload.</span></div></div>
+            <div class="step"><div class="num">2</div><div><strong>Decode and verify</strong><span>Uploads are decoded safely, validated as images, and size-checked before inference.</span></div></div>
+            <div class="step"><div class="num">3</div><div><strong>Filter unrelated inputs</strong><span>Image statistics are compared against the expected modality distribution to reject unsupported content.</span></div></div>
+            <div class="step"><div class="num">4</div><div><strong>Run the deep model</strong><span>The API returns modality, class, confidence, backend, and probability details in a clean payload.</span></div></div>
           </div>
         </article>
       </div>
@@ -211,15 +217,15 @@
     <section>
       <div class="block cta" data-reveal>
         <div>
-          <h2>Ready for a sharper review flow.</h2>
-          <p>Upload a chest CT image, inspect the output, and explore a classifier presented with the kind of finish expected from a strong portfolio project.</p>
+          <h2>Ready for a stronger final-year demo.</h2>
+          <p>Upload a chest CT or ECG image, inspect the output, and explore a two-model diagnostic project with one polished presentation surface.</p>
         </div>
         <a class="btn primary" href="#predict">Launch Prediction</a>
       </div>
     </section>
   </main>
 
-  <footer class="footer"><strong>Pratyush Mishra</strong> | Deep-learning chest CT classification with a production-minded frontend.</footer>
+  <footer class="footer"><strong>Pratyush Mishra</strong> | Multi-modal deep-learning diagnosis for chest CT and ECG images.</footer>
 
   <div id="loading">
     <div class="loader-wrap">
@@ -241,7 +247,15 @@
     const resultJson = document.getElementById("result-json");
     const resultUrl = document.getElementById("url");
     const loadingOverlay = document.getElementById("loading");
+    const modalitySelect = document.getElementById("modality-select");
+    const modalityChip = document.getElementById("modality-chip");
+    const panelTitle = document.getElementById("panel-title");
+    const panelDescription = document.getElementById("panel-description");
+    const overlayTitle = document.getElementById("overlay-title");
+    const overlayHint = document.getElementById("overlay-hint");
     let baseData = "";
+    let modalityConfigs = [];
+    let activeModality = "chest_ct";
 
     function formatFileSize(bytes) {
       if (!bytes) return "Size unavailable";
@@ -252,7 +266,11 @@
     }
 
     function showJson(payload) { resultJson.textContent = JSON.stringify(payload, null, 2); }
-    function setPreview(src) { resultPreview.innerHTML = `<img src="${src}" alt="Selected CT scan preview">`; }
+    function setPreview(src) { resultPreview.innerHTML = `<img src="${src}" alt="Selected medical image preview">`; }
+
+    function currentModalityConfig() {
+      return modalityConfigs.find((config) => config.key === activeModality) || null;
+    }
 
     function setUploadStatus(label, meta, ready) {
       selectedFileName.textContent = label;
@@ -263,11 +281,16 @@
     }
 
     function resetPreview() {
+      const config = currentModalityConfig();
       baseData = "";
       photo.removeAttribute("src");
       dropzone.classList.remove("has-file");
       resultPreview.innerHTML = "<span>Prediction preview appears here after upload.</span>";
-      setUploadStatus("No image selected yet", "Accepted formats: PNG, JPG, JPEG", false);
+      setUploadStatus(
+        "No image selected yet",
+        config ? config.upload_hint : "Accepted formats: PNG, JPG, JPEG",
+        false
+      );
     }
 
     function showUploadError(message) {
@@ -308,6 +331,7 @@
     }
 
     async function sendRequest() {
+      const config = currentModalityConfig();
       if (!baseData) {
         uploadStatusBadge.textContent = "Image required";
         showJson({ error: "Upload an image before prediction." });
@@ -318,7 +342,7 @@
         const response = await fetch(resultUrl.value, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: baseData })
+          body: JSON.stringify({ image: baseData, modality: activeModality })
         });
         const payload = await response.json();
         showJson(Array.isArray(payload) ? payload[0] : payload);
@@ -326,6 +350,36 @@
         showJson({ error: "Prediction failed", message: error.message });
       } finally {
         loadingOverlay.style.display = "none";
+      }
+    }
+
+    function applyModality(config) {
+      activeModality = config.key;
+      panelTitle.textContent = config.upload_title;
+      panelDescription.textContent = config.summary;
+      overlayTitle.textContent = `Drop a ${config.display_name} here`;
+      overlayHint.textContent = config.upload_hint;
+      modalityChip.textContent = config.display_name;
+      modalitySelect.value = config.key;
+      resetPreview();
+      showJson({ status: "ready", modality: config.key, message: `Upload a ${config.display_name.toLowerCase()} to begin.` });
+    }
+
+    async function loadModalities() {
+      try {
+        const response = await fetch("/modalities");
+        const payload = await response.json();
+        modalityConfigs = payload.modalities || [];
+        modalitySelect.innerHTML = modalityConfigs
+          .map((config) => `<option value="${config.key}">${config.display_name}</option>`)
+          .join("");
+        const defaultConfig = modalityConfigs.find((config) => config.key === payload.default_modality) || modalityConfigs[0];
+        if (defaultConfig) {
+          applyModality(defaultConfig);
+        }
+      } catch (error) {
+        modalityChip.textContent = "Modality load failed";
+        showJson({ error: "Could not load modalities", message: error.message });
       }
     }
 
@@ -343,14 +397,17 @@
 
     chooseButton.addEventListener("click", () => fileinput.click());
     sendButton.addEventListener("click", sendRequest);
+    modalitySelect.addEventListener("change", function() {
+      const config = modalityConfigs.find((item) => item.key === this.value);
+      if (config) applyModality(config);
+    });
     fileinput.addEventListener("change", function() { if (this.files && this.files[0]) handleSelectedFile(this.files[0]); });
     ["dragenter", "dragover"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => { event.preventDefault(); event.stopPropagation(); dropzone.classList.add("drag"); }));
     ["dragleave", "dragend", "drop"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => { event.preventDefault(); event.stopPropagation(); dropzone.classList.remove("drag"); }));
     dropzone.addEventListener("drop", (event) => { const files = event.dataTransfer.files; if (files && files[0]) handleSelectedFile(files[0]); });
 
-    resetPreview();
     setupReveals();
-    showJson({ status: "ready", message: "Upload a chest CT image to begin." });
+    loadModalities();
   </script>
 </body>
 </html>

@@ -12,6 +12,11 @@ from flask_cors import CORS, cross_origin
 from PIL import Image, UnidentifiedImageError
 
 from cnnClassifier import PROJECT_AUTHOR, logger
+from cnnClassifier.pipeline.modalities import (
+    get_default_modality_key,
+    get_modality_config,
+    list_modality_configs,
+)
 from cnnClassifier.pipeline.prediction import PredictionPipeline, UnsupportedImageError
 from cnnClassifier.utils.common import ImageDecodeError, decodeImage
 
@@ -34,13 +39,32 @@ CORS(app)
 class InferenceService:
     def __init__(self):
         self.input_image_name = INPUT_IMAGE_NAME
-        self.predictor = PredictionPipeline(self.input_image_name)
+        self.default_modality = get_default_modality_key()
+        self.predictor = PredictionPipeline(self.input_image_name, modality=self.default_modality)
 
-    def create_predictor(self, input_image_path: str) -> PredictionPipeline:
-        return PredictionPipeline(input_image_path)
+    def create_predictor(self, input_image_path: str, modality: str = "chest_ct") -> PredictionPipeline:
+        return PredictionPipeline(input_image_path, modality=modality)
 
 
 inference_service = InferenceService()
+
+
+def active_backend() -> str:
+    use_tflite_env = os.getenv("USE_TFLITE_MODEL", "").lower()
+    running_on_vercel = os.getenv("VERCEL", "").lower() in {"1", "true"}
+
+    if use_tflite_env in {"0", "false", "no"}:
+        return "tensorflow"
+    if use_tflite_env in {"1", "true", "yes"}:
+        return "tflite"
+    if running_on_vercel:
+        return "tflite"
+    return "tensorflow"
+
+
+def public_modality_payload() -> list[dict]:
+    backend = active_backend()
+    return [config.to_public_dict(backend) for config in list_modality_configs()]
 
 
 @app.before_request
@@ -96,6 +120,20 @@ def health_route():
             "model_path": model_path,
             "model_available": os.path.exists(model_path),
             "train_available": not RUNNING_ON_VERCEL,
+            "default_modality": inference_service.default_modality,
+            "modalities": public_modality_payload(),
+        }
+    )
+
+
+@app.route("/modalities", methods=["GET"])
+@cross_origin()
+def modalities_route():
+    return jsonify(
+        {
+            "author": PROJECT_AUTHOR,
+            "default_modality": inference_service.default_modality,
+            "modalities": public_modality_payload(),
         }
     )
 
@@ -103,20 +141,10 @@ def health_route():
 @app.route("/model-info", methods=["GET"])
 @cross_origin()
 def model_info_route():
-    predictor = inference_service.predictor
-    model_path = (
-        predictor.tflite_model_path
-        if predictor.backend == "tflite"
-        else predictor.model_path
-    )
     payload = {
         "author": PROJECT_AUTHOR,
-        "backend": predictor.backend,
-        "model_path": model_path,
-        "model_available": os.path.exists(model_path),
-        "local_training_model_path": predictor.model_path,
-        "tflite_model_path": predictor.tflite_model_path,
-        "inference_profile_path": predictor.inference_profile_path,
+        "default_modality": inference_service.default_modality,
+        "modalities": {item["key"]: item for item in public_modality_payload()},
         "train_available": not RUNNING_ON_VERCEL,
     }
     return jsonify(payload)
@@ -132,9 +160,9 @@ def train_route():
                 "author": PROJECT_AUTHOR,
                 "train_available": not RUNNING_ON_VERCEL,
                 "message": (
-                    "POST /train runs the local TensorFlow/DVC training pipeline."
+                    "POST /train runs the local multi-modal training pipeline for chest CT and ECG models."
                     if not RUNNING_ON_VERCEL
-                    else "Training is disabled on Vercel serverless runtime; run dvc repro locally."
+                    else "Training is disabled on Vercel serverless runtime; run python main.py locally."
                 ),
             }
         )
@@ -146,7 +174,7 @@ def train_route():
                     "status": "unavailable",
                     "author": PROJECT_AUTHOR,
                     "train_available": False,
-                    "message": "Training is disabled on Vercel serverless runtime; run dvc repro locally.",
+                    "message": "Training is disabled on Vercel serverless runtime; run python main.py locally.",
                 }
             ),
             409,
@@ -173,9 +201,15 @@ def train_route():
 def predict_route():
     request_data = request.get_json(silent=True) or {}
     image_base64 = request_data.get("image")
+    requested_modality = request_data.get("modality", inference_service.default_modality)
 
     if not image_base64:
         return jsonify({"error": "Missing 'image' key in JSON payload."}), 400
+
+    try:
+        modality_config = get_modality_config(requested_modality)
+    except ValueError:
+        return jsonify({"error": "Unsupported modality."}), 400
 
     temp_image_path = Path(tempfile.gettempdir()) / f"chest_classifier_{g.trace_id}.jpg"
     try:
@@ -185,7 +219,7 @@ def predict_route():
                 uploaded_image.verify()
         except (UnidentifiedImageError, OSError) as error:
             raise ImageDecodeError("Decoded payload is not a supported image file.") from error
-        predictor = inference_service.create_predictor(str(temp_image_path))
+        predictor = inference_service.create_predictor(str(temp_image_path), modality=modality_config.key)
         prediction_result = predictor.predict()
     except ImageDecodeError as error:
         logger.warning(

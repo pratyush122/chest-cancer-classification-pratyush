@@ -12,6 +12,13 @@ class FakeModel:
         return np.array([[0.9, 0.1]])
 
 
+class FakeEcgModel:
+    def predict(self, input_tensor, verbose=0):
+        assert input_tensor.shape == (1, 224, 224, 3)
+        assert verbose == 0
+        return np.array([[0.1, 0.8, 0.1]])
+
+
 def test_prediction_pipeline_normalizes_and_labels(monkeypatch, tmp_path):
     image_path = tmp_path / "scan.png"
     model_path = tmp_path / "model.h5"
@@ -53,6 +60,7 @@ def test_prediction_pipeline_normalizes_and_labels(monkeypatch, tmp_path):
             "image": "Adenocarcinoma Cancer",
             "class_index": 0,
             "backend": "tensorflow",
+            "modality": "chest_ct",
             "confidence": 0.9,
             "probabilities": {
                 "Adenocarcinoma Cancer": 0.9,
@@ -61,6 +69,67 @@ def test_prediction_pipeline_normalizes_and_labels(monkeypatch, tmp_path):
             "supported_image": True,
         }
     ]
+
+
+def test_prediction_pipeline_supports_ecg_modality(monkeypatch, tmp_path):
+    image_path = tmp_path / "ecg.png"
+    model_path = tmp_path / "ecg_model.h5"
+    Image.new("RGB", (32, 32), color=(245, 245, 245)).save(image_path)
+    model_path.write_bytes(b"fake-model")
+    inference_profile_path = tmp_path / "ecg_inference_profile.json"
+    inference_profile_path.write_text(
+        """
+{
+  "ood_profile": {
+    "feature_names": ["grayscale_mean", "grayscale_std", "grayscale_p10", "grayscale_p90", "red_mean", "green_mean", "blue_mean", "red_std", "green_std", "blue_std", "edge_horizontal", "edge_vertical", "dark_pixel_ratio", "bright_pixel_ratio", "border_dark_ratio", "center_mean", "center_std", "channel_delta", "entropy"],
+    "feature_mean": [0.9, 0.03, 0.85, 0.95, 0.9, 0.9, 0.9, 0.03, 0.03, 0.03, 0.01, 0.01, 0.0, 1.0, 0.0, 0.9, 0.03, 0.0, 0.5],
+    "feature_std": [0.2, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5],
+    "score_threshold": 20.0,
+    "feature_bounds": {
+      "grayscale_std": {"min": 0.0, "max": 1.0},
+      "edge_horizontal": {"min": 0.0, "max": 1.0},
+      "edge_vertical": {"min": 0.0, "max": 1.0},
+      "entropy": {"min": -1.0, "max": 10.0},
+      "channel_delta": {"min": 0.0, "max": 1.0}
+    }
+  }
+}
+        """,
+        encoding="utf-8",
+    )
+
+    prediction.load_inference_model.cache_clear()
+    prediction.load_inference_profile.cache_clear()
+    monkeypatch.setenv("ECG_MODEL_PATH", str(model_path))
+    monkeypatch.setenv("ECG_INFERENCE_PROFILE_PATH", str(inference_profile_path))
+    monkeypatch.setenv("USE_TFLITE_MODEL", "false")
+    monkeypatch.setattr(prediction, "load_inference_model", lambda model_path: FakeEcgModel())
+
+    result = prediction.PredictionPipeline(str(image_path), modality="ecg").predict()
+
+    assert result == [
+        {
+            "image": "History of MI",
+            "class_index": 1,
+            "backend": "tensorflow",
+            "modality": "ecg",
+            "confidence": 0.8,
+            "probabilities": {
+                "Abnormal heartbeat": 0.1,
+                "History of MI": 0.8,
+                "Normal Person": 0.1,
+            },
+            "supported_image": True,
+        }
+    ]
+
+
+def test_prediction_pipeline_rejects_unknown_modality(tmp_path):
+    image_path = tmp_path / "scan.png"
+    Image.new("RGB", (32, 32), color=(120, 120, 120)).save(image_path)
+
+    with pytest.raises(ValueError):
+        prediction.PredictionPipeline(str(image_path), modality="unknown")
 
 
 def test_prediction_pipeline_rejects_non_ct_images(monkeypatch, tmp_path):
