@@ -1,38 +1,46 @@
-# Pratyush Mishra Chest Cancer Classification
+# Pratyush Mishra Medical Image Classifier
 
-Chest CT classification project by **Pratyush Mishra** with a TensorFlow VGG16 transfer-learning pipeline, DVC reproducibility, and a polished Flask + Vercel interface.
+Combined final-year deep-learning project for:
+
+- Chest CT scan classification for adenocarcinoma vs normal
+- ECG image classification for cardiovascular condition screening
 
 Live app: [https://chest-cancer-classifier-pratyush.vercel.app](https://chest-cancer-classifier-pratyush.vercel.app)
 
-## What Changed
+## Project Summary
 
-- The project is now **deep-learning only**.
-- The old handcrafted lightweight classifier has been removed.
-- Deployment now uses a **TensorFlow Lite export** of the trained deep model.
-- Validation is more honest because exact duplicate images are grouped before train/validation splitting.
-- Unsupported or random images are rejected before diagnosis instead of being forced into a cancer class.
+This repository now ships as a single multi-modal medical-imaging demo. The same Flask + Vercel app lets the user choose between:
 
-## Architecture
+- `Chest CT Scan`
+- `ECG Image`
 
-- UI: `templates/index.html`
-- API: `app.py`
-- Training model: `artifacts/training/model.h5`
-- Deployment model: `model/model.tflite`
-- Input safety profile: `model/inference_profile.json`
-- Pipeline stages: data ingestion, base model prep, training, evaluation, TensorFlow Lite export
+The backend routes each upload to the correct deep-learning model, class labels, TensorFlow Lite artifact, and image-domain safety profile.
 
-## Model Type
+## Modalities
 
-This project uses **deep learning**, not a classical machine learning classifier.
+### 1. Chest CT Scan
 
+- Task: `Adenocarcinoma Cancer` vs `Normal`
 - Backbone: `VGG16`
-- Framework: `TensorFlow / Keras`
-- Training style: transfer learning
-- Deployment format: `TensorFlow Lite`
+- Local trained model: `artifacts/training/model.h5`
+- Deployment model: `model/model.tflite`
+- Input profile: `model/inference_profile.json`
 
-## Current Evaluation
+### 2. ECG Image
 
-Current cleaned validation metrics from `scores.json`:
+- Task: `Abnormal heartbeat`, `History of MI`, `Normal Person`
+- Backbone: `MobileNetV2`
+- Dataset source: `https://zenodo.org/api/records/14767442/files/archive%20(10).zip/content`
+- Local trained model: `artifacts/ecg_training/model.h5`
+- Deployment model: `model/ecg_model.tflite`
+- Input profile: `model/ecg_inference_profile.json`
+- Metadata: `model/ecg_metadata.json`
+
+## Current Scores
+
+### Chest CT
+
+Metrics from `scores.json`:
 
 ```json
 {
@@ -45,27 +53,50 @@ Current cleaned validation metrics from `scores.json`:
 }
 ```
 
-Confusion matrix:
+### ECG
+
+Metrics from `ecg_scores.json`:
 
 ```json
-[
-  [32, 7],
-  [0, 11]
-]
+{
+  "loss": 0.4064084589481354,
+  "accuracy": 0.8202247191011236,
+  "precision_macro": 0.7723985890652557,
+  "recall_macro": 0.7806213394448688,
+  "f1_macro": 0.7749423842447097
+}
 ```
 
 Important note:
 
-- The old `1.0` accuracy number was not trustworthy.
-- The dataset contains many duplicate `normal` images.
-- The current scores are more legitimate because duplicate leakage is handled before splitting.
+- The ECG dataset contains `707` raw images and `449` unique images after duplicate grouping.
+- The latest ECG training run used `565` training images and `89` unique validation images.
+- `History of MI` is the hardest class because it has the smallest unique-image count.
+- These are honest validation metrics from the actual trained artifacts included in this repo.
 
-## Dataset Notes
+## Architecture
 
-- Total images: `343`
-- Adenocarcinoma: `195`
-- Normal: `148`
-- Unique normal images after duplicate grouping: `55`
+- UI: `templates/index.html`
+- API: `app.py`
+- Vercel entry: `api/index.py`
+- Shared modality registry: `src/cnnClassifier/pipeline/modalities.py`
+- Shared inference path: `src/cnnClassifier/pipeline/prediction.py`
+- Chest CT training pipeline: `main.py` + DVC chest stages
+- ECG training script: `scripts/train_ecg_model.py`
+
+## What Changed
+
+- Added ECG image classification as a second diagnostic modality
+- Added a shared modality registry for model paths, labels, and image-domain rules
+- Updated the frontend to let the user choose `Chest CT Scan` or `ECG Image`
+- Added a new ECG training/export pipeline that:
+  - downloads the ECG dataset into the project on `D:`
+  - trains the ECG image model locally
+  - exports `model/ecg_model.tflite`
+  - builds `model/ecg_inference_profile.json`
+  - saves `ecg_scores.json`
+- Updated `main.py` so local full training runs both the chest CT pipeline and the ECG pipeline
+- Updated Vercel packaging to ship both deployed TFLite models
 
 ## Local Setup
 
@@ -84,37 +115,79 @@ chmod +x scripts/setup.sh scripts/run.sh
 source .venv/bin/activate
 ```
 
-## Run
+## Run The App
 
-```bash
+```powershell
 python app.py
-python main.py
-dvc repro
-python -m pytest
 ```
 
-Default local URL: `http://localhost:8080`
+Open:
+
+- [http://localhost:8080](http://localhost:8080)
+
+## Train Both Models Locally
+
+```powershell
+python main.py
+```
+
+What `python main.py` does now:
+
+1. Runs the chest CT ingestion stage
+2. Prepares the chest CT base model
+3. Trains the chest CT model
+4. Evaluates the chest CT model
+5. Trains the ECG image model
+6. Exports ECG deployment artifacts
+
+## Train Only The ECG Model
+
+```powershell
+python scripts/train_ecg_model.py
+```
+
+Dataset download location:
+
+- `datasets/ecg/`
+
+This was intentionally kept inside the project on `D:` to avoid heavy downloads on `C:`.
 
 ## API
 
-Health:
+### Health
 
 ```bash
-curl https://chest-cancer-classifier-pratyush.vercel.app/health
+curl http://localhost:8080/health
 ```
 
-Prediction:
+### Modalities
 
 ```bash
-curl -X POST https://chest-cancer-classifier-pratyush.vercel.app/predict \
+curl http://localhost:8080/modalities
+```
+
+### Model Info
+
+```bash
+curl http://localhost:8080/model-info
+```
+
+### Predict
+
+Chest CT:
+
+```bash
+curl -X POST http://localhost:8080/predict \
   -H "Content-Type: application/json" \
-  -d '{"image":"<base64-image>"}'
+  -d "{\"modality\":\"chest_ct\",\"image\":\"<base64-image>\"}"
 ```
 
-Model info:
+ECG:
 
 ```bash
-curl https://chest-cancer-classifier-pratyush.vercel.app/model-info
+curl -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d "{\"modality\":\"ecg\",\"image\":\"<base64-image>\"}"
 ```
 
 ## Environment Variables
@@ -124,6 +197,9 @@ curl https://chest-cancer-classifier-pratyush.vercel.app/model-info
 - `MODEL_PATH`
 - `TFLITE_MODEL_PATH`
 - `INFERENCE_PROFILE_PATH`
+- `ECG_MODEL_PATH`
+- `ECG_TFLITE_MODEL_PATH`
+- `ECG_INFERENCE_PROFILE_PATH`
 - `USE_TFLITE_MODEL`
 - `TRAINED_MODEL_PATH`
 - `TRAINING_DATA_PATH`
@@ -133,20 +209,49 @@ curl https://chest-cancer-classifier-pratyush.vercel.app/model-info
 - `MLFLOW_TRACKING_USERNAME`
 - `MLFLOW_TRACKING_PASSWORD`
 
-## Deployment
+## Vercel Deployment
 
-Vercel runtime now ships:
+Vercel ships the deployable inference artifacts for both modalities:
 
 - `model/model.tflite`
 - `model/inference_profile.json`
-- Flask app and source files
+- `model/ecg_model.tflite`
+- `model/ecg_inference_profile.json`
+- `model/ecg_metadata.json`
 
-Vercel is pinned to **Python 3.12** and uses **LiteRT** (`ai-edge-litert`) for deployment inference.
+Training is disabled on Vercel serverless runtime. Training must be done locally with:
+
+```powershell
+python main.py
+```
+
+After local training, commit the generated deployable ECG artifacts and redeploy.
+
+## MLflow
+
+The repository still supports MLflow evaluation logging when enabled:
+
+```powershell
+$env:ENABLE_MLFLOW_LOGGING="true"
+$env:MLFLOW_TRACKING_URI="http://127.0.0.1:5000"
+python -m cnnClassifier.pipeline.stage_04_model_evaluation
+```
+
+That logs the chest CT evaluation run. The ECG training pipeline currently saves its metrics to `ecg_scores.json`.
 
 ## Verification
 
-- `python -m pytest`: passed
-- `dvc repro tflite_export`: passed
-- API rejects non-CT noise image with `422`
-- API accepts valid CT uploads
-- UI rebuilt with a more professional upload flow, improved hierarchy, and animated About Me section
+Recommended checks:
+
+```powershell
+python -m pytest
+python app.py
+python scripts/train_ecg_model.py
+```
+
+Manual checks:
+
+- choose `Chest CT Scan` in the UI and run a prediction
+- choose `ECG Image` in the UI and run a prediction
+- verify `http://localhost:8080/modalities` returns both modalities
+- verify `http://localhost:8080/model-info` exposes both deployed models

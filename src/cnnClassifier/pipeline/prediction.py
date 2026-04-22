@@ -6,17 +6,12 @@ import numpy as np
 from PIL import Image
 
 from cnnClassifier import logger
+from cnnClassifier.pipeline.modalities import get_modality_config
 from cnnClassifier.utils.image_features import (
     INFERENCE_PROFILE_IMAGE_SIZE,
     evaluate_ood_profile,
     extract_image_statistics,
 )
-
-
-CLASS_LABELS = {
-    0: "Adenocarcinoma Cancer",
-    1: "Normal",
-}
 
 
 class UnsupportedImageError(ValueError):
@@ -57,27 +52,30 @@ def load_tflite_interpreter(model_path: str):
 
 
 class PredictionPipeline:
-    def __init__(self, input_image_path: str):
+    def __init__(self, input_image_path: str, modality: str = "chest_ct"):
         self.input_image_path = input_image_path
-        self.model_path = os.getenv("MODEL_PATH", os.path.join("model", "model.h5"))
-        self.tflite_model_path = os.getenv(
-            "TFLITE_MODEL_PATH", os.path.join("model", "model.tflite")
-        )
-        self.inference_profile_path = os.getenv(
-            "INFERENCE_PROFILE_PATH", os.path.join("model", "inference_profile.json")
-        )
+        self.config = get_modality_config(modality)
+        self.model_path = self.config.model_path
+        self.tflite_model_path = self.config.tflite_model_path
+        self.inference_profile_path = self.config.inference_profile_path
         self.backend = self._select_backend()
         self._image_statistics = None
 
     def _select_backend(self) -> str:
         use_tflite_env = os.getenv("USE_TFLITE_MODEL", "").lower()
         running_on_vercel = os.getenv("VERCEL", "").lower() in {"1", "true"}
+        tflite_available = os.path.exists(self.tflite_model_path)
+        tensorflow_available = os.path.exists(self.model_path)
 
         if use_tflite_env in {"0", "false", "no"}:
+            if not tensorflow_available and tflite_available:
+                return "tflite"
             return "tensorflow"
         if use_tflite_env in {"1", "true", "yes"}:
             return "tflite"
         if running_on_vercel:
+            return "tflite"
+        if not tensorflow_available and tflite_available:
             return "tflite"
         return "tensorflow"
 
@@ -90,11 +88,21 @@ class PredictionPipeline:
         processed[:, :, 2] -= 123.68
         return processed
 
+    @staticmethod
+    def _mobilenet_v2_preprocess(image_array: np.ndarray) -> np.ndarray:
+        processed = image_array.astype(np.float32)
+        return (processed / 127.5) - 1.0
+
+    def _preprocess_image(self, image_array: np.ndarray) -> np.ndarray:
+        if self.config.preprocessing == "mobilenet_v2":
+            return self._mobilenet_v2_preprocess(image_array)
+        return self._vgg16_preprocess(image_array)
+
     def _prepare_image_tensor(self) -> np.ndarray:
         from tensorflow.keras.preprocessing import image
         loaded_image = image.load_img(self.input_image_path, target_size=(224, 224))
         image_array = image.img_to_array(loaded_image)
-        return np.expand_dims(self._vgg16_preprocess(image_array), axis=0)
+        return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _prepare_tflite_tensor(self) -> np.ndarray:
         with Image.open(self.input_image_path) as uploaded_image:
@@ -102,7 +110,7 @@ class PredictionPipeline:
                 uploaded_image.convert("RGB").resize((224, 224)),
                 dtype=np.float32,
             )
-        return np.expand_dims(self._vgg16_preprocess(image_array), axis=0)
+        return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _image_feature_stats(self) -> dict[str, float]:
         if self._image_statistics is None:
@@ -137,9 +145,7 @@ class PredictionPipeline:
             anomaly_score,
             violations,
         )
-        raise UnsupportedImageError(
-            "The uploaded image does not match the chest CT scans the model was trained on."
-        )
+        raise UnsupportedImageError(self.config.unsupported_image_message)
 
     def _predict_with_tflite_model(self):
         if not os.path.exists(self.tflite_model_path):
@@ -151,10 +157,11 @@ class PredictionPipeline:
         interpreter.invoke()
         probabilities = interpreter.get_tensor(output_details[0]["index"])[0]
         predicted_index = int(np.argmax(probabilities))
-        prediction_label = CLASS_LABELS.get(predicted_index, "Unknown")
+        prediction_label = self.config.labels[predicted_index] if predicted_index < len(self.config.labels) else "Unknown"
         confidence = float(probabilities[predicted_index])
         logger.info(
-            "TensorFlow Lite prediction completed: label=%s, class_index=%s, confidence=%.4f",
+            "TensorFlow Lite prediction completed: modality=%s label=%s, class_index=%s, confidence=%.4f",
+            self.config.key,
             prediction_label,
             predicted_index,
             confidence,
@@ -164,9 +171,10 @@ class PredictionPipeline:
                 "image": prediction_label,
                 "class_index": predicted_index,
                 "backend": "tflite",
+                "modality": self.config.key,
                 "confidence": round(confidence, 4),
                 "probabilities": {
-                    CLASS_LABELS[index]: round(float(probability), 4)
+                    self.config.labels[index]: round(float(probability), 4)
                     for index, probability in enumerate(probabilities)
                 },
                 "supported_image": True,
@@ -181,11 +189,12 @@ class PredictionPipeline:
         input_tensor = self._prepare_image_tensor()
         probabilities = model.predict(input_tensor, verbose=0)
         predicted_index = int(np.argmax(probabilities, axis=1)[0])
-        prediction_label = CLASS_LABELS.get(predicted_index, "Unknown")
+        prediction_label = self.config.labels[predicted_index] if predicted_index < len(self.config.labels) else "Unknown"
         confidence = float(probabilities[0][predicted_index])
 
         logger.info(
-            "Prediction completed: label=%s, class_index=%s, confidence=%.4f",
+            "Prediction completed: modality=%s label=%s, class_index=%s, confidence=%.4f",
+            self.config.key,
             prediction_label,
             predicted_index,
             confidence,
@@ -195,9 +204,10 @@ class PredictionPipeline:
                 "image": prediction_label,
                 "class_index": predicted_index,
                 "backend": "tensorflow",
+                "modality": self.config.key,
                 "confidence": round(confidence, 4),
                 "probabilities": {
-                    CLASS_LABELS[index]: round(float(probability), 4)
+                    self.config.labels[index]: round(float(probability), 4)
                     for index, probability in enumerate(probabilities[0])
                 },
                 "supported_image": True,

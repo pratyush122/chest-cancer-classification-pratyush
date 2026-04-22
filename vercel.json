@@ -9,7 +9,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
-      "includeFiles": "templates/**,model/model.tflite,model/inference_profile.json,src/**,config/**,params.yaml",
+      "includeFiles": "templates/**,model/**,src/**,config/**,params.yaml,ecg_scores.json,scores.json",
       "excludeFiles": "{artifacts/**,model/model.h5,research/**,tests/**,logs/**,.venv/**,__pycache__/**,**/*.ipynb}"
     }
   }

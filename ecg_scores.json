@@ -1,0 +1,76 @@
+{
+    "loss": 0.4064084589481354,
+    "accuracy": 0.8202247191011236,
+    "precision_macro": 0.7723985890652557,
+    "recall_macro": 0.7806213394448688,
+    "f1_macro": 0.7749423842447097,
+    "confusion_matrix": [
+        [
+            40,
+            3,
+            1
+        ],
+        [
+            2,
+            11,
+            4
+        ],
+        [
+            0,
+            6,
+            22
+        ]
+    ],
+    "per_class": {
+        "Abnormal heartbeat": {
+            "precision": 0.9523809523809523,
+            "recall": 0.9090909090909091,
+            "f1": 0.9302325581395349,
+            "support": 44
+        },
+        "History of MI": {
+            "precision": 0.55,
+            "recall": 0.6470588235294118,
+            "f1": 0.5945945945945946,
+            "support": 17
+        },
+        "Normal Person": {
+            "precision": 0.8148148148148148,
+            "recall": 0.7857142857142857,
+            "f1": 0.7999999999999999,
+            "support": 28
+        }
+    },
+    "validation_samples": 89,
+    "duplicate_summary": {
+        "Abnormal heartbeat": {
+            "total_images": 241,
+            "unique_images": 220,
+            "duplicates_removed": 21,
+            "training_images": 194,
+            "training_unique_images": 176,
+            "validation_unique_images": 44
+        },
+        "History of MI": {
+            "total_images": 171,
+            "unique_images": 87,
+            "duplicates_removed": 84,
+            "training_images": 136,
+            "training_unique_images": 70,
+            "validation_unique_images": 17
+        },
+        "Normal Person": {
+            "total_images": 295,
+            "unique_images": 142,
+            "duplicates_removed": 153,
+            "training_images": 235,
+            "training_unique_images": 114,
+            "validation_unique_images": 28
+        }
+    },
+    "class_names": [
+        "Abnormal heartbeat",
+        "History of MI",
+        "Normal Person"
+    ]
+}

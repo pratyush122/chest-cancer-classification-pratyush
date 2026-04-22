@@ -2,8 +2,12 @@
 __pycache__
 *.pyc
 .pytest_cache
+.ruff_cache
 .dvc/cache
 artifacts
+datasets
+mlruns
+mlflow.db
 model/model.h5
 research
 logs

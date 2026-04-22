@@ -43,8 +43,19 @@ def test_model_info_reports_active_backend():
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["author"] == "Pratyush Mishra"
-    assert payload["model_available"] is True
-    assert payload["backend"] in {"tensorflow", "tflite"}
+    assert "modalities" in payload
+    assert set(payload["modalities"]) >= {"chest_ct", "ecg"}
+
+
+def test_modalities_route_lists_supported_modalities():
+    client = app_module.app.test_client()
+
+    response = client.get("/modalities")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["default_modality"] == "chest_ct"
+    assert {modality["key"] for modality in payload["modalities"]} >= {"chest_ct", "ecg"}
 
 
 def test_predict_requires_image_payload():
@@ -60,24 +71,25 @@ def test_predict_returns_model_result(monkeypatch, tmp_path):
     created_paths = []
 
     class FakePredictor:
-        def __init__(self, input_image_path):
-            created_paths.append(input_image_path)
+        def __init__(self, input_image_path, modality):
+            created_paths.append((input_image_path, modality))
 
         def predict(self):
-            return [{"image": "Normal", "class_index": 1}]
+            return [{"image": "Normal", "class_index": 1, "modality": "ecg"}]
 
     monkeypatch.setattr(
         app_module.inference_service,
         "create_predictor",
-        lambda input_image_path: FakePredictor(input_image_path),
+        lambda input_image_path, modality="chest_ct": FakePredictor(input_image_path, modality),
     )
     client = app_module.app.test_client()
 
-    response = client.post("/predict", json={"image": _encoded_png()})
+    response = client.post("/predict", json={"image": _encoded_png(), "modality": "ecg"})
 
     assert response.status_code == 200
-    assert response.get_json() == [{"image": "Normal", "class_index": 1}]
+    assert response.get_json() == [{"image": "Normal", "class_index": 1, "modality": "ecg"}]
     assert len(created_paths) == 1
+    assert created_paths[0][1] == "ecg"
 
 
 def test_predict_rejects_invalid_base64_payload():
@@ -107,7 +119,7 @@ def test_predict_rejects_supported_but_non_ct_image(monkeypatch):
     monkeypatch.setattr(
         app_module.inference_service,
         "create_predictor",
-        lambda input_image_path: FakePredictor(),
+        lambda input_image_path, modality="chest_ct": FakePredictor(),
     )
     client = app_module.app.test_client()
 
@@ -115,6 +127,15 @@ def test_predict_rejects_supported_but_non_ct_image(monkeypatch):
 
     assert response.status_code == 422
     assert response.get_json()["error"] == "Unsupported image domain."
+
+
+def test_predict_rejects_unknown_modality():
+    client = app_module.app.test_client()
+
+    response = client.post("/predict", json={"image": _encoded_png(), "modality": "unknown"})
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Unsupported modality."
 
 
 def test_train_get_reports_availability():
