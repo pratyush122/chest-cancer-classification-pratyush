@@ -10,6 +10,7 @@ class ModalityConfig:
     upload_hint: str
     summary: str
     labels: tuple[str, ...]
+    preprocessing: str
     model_path: str
     tflite_model_path: str
     inference_profile_path: str
@@ -46,6 +47,7 @@ def _modality_registry() -> dict[str, ModalityConfig]:
         upload_hint="PNG, JPG, or JPEG chest CT slices for adenocarcinoma vs normal classification.",
         summary="Deep-learning chest CT cancer classification using the existing VGG16-based pipeline.",
         labels=("Adenocarcinoma Cancer", "Normal"),
+        preprocessing="vgg16",
         model_path=_env_or_default("MODEL_PATH", os.path.join("model", "model.h5")),
         tflite_model_path=_env_or_default("TFLITE_MODEL_PATH", os.path.join("model", "model.tflite")),
         inference_profile_path=_env_or_default(
@@ -60,6 +62,7 @@ def _modality_registry() -> dict[str, ModalityConfig]:
         upload_hint="PNG, JPG, or JPEG ECG printouts for cardiac condition classification.",
         summary="Transfer-learning ECG image classifier for normal traces, abnormal heartbeat, and history of MI.",
         labels=("Abnormal heartbeat", "History of MI", "Normal Person"),
+        preprocessing="mobilenet_v2",
         model_path=_env_or_default("ECG_MODEL_PATH", os.path.join("artifacts", "ecg_training", "model.h5")),
         tflite_model_path=_env_or_default(
             "ECG_TFLITE_MODEL_PATH", os.path.join("model", "ecg_model.tflite")

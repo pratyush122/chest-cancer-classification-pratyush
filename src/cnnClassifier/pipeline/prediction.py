@@ -88,11 +88,21 @@ class PredictionPipeline:
         processed[:, :, 2] -= 123.68
         return processed
 
+    @staticmethod
+    def _mobilenet_v2_preprocess(image_array: np.ndarray) -> np.ndarray:
+        processed = image_array.astype(np.float32)
+        return (processed / 127.5) - 1.0
+
+    def _preprocess_image(self, image_array: np.ndarray) -> np.ndarray:
+        if self.config.preprocessing == "mobilenet_v2":
+            return self._mobilenet_v2_preprocess(image_array)
+        return self._vgg16_preprocess(image_array)
+
     def _prepare_image_tensor(self) -> np.ndarray:
         from tensorflow.keras.preprocessing import image
         loaded_image = image.load_img(self.input_image_path, target_size=(224, 224))
         image_array = image.img_to_array(loaded_image)
-        return np.expand_dims(self._vgg16_preprocess(image_array), axis=0)
+        return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _prepare_tflite_tensor(self) -> np.ndarray:
         with Image.open(self.input_image_path) as uploaded_image:
@@ -100,7 +110,7 @@ class PredictionPipeline:
                 uploaded_image.convert("RGB").resize((224, 224)),
                 dtype=np.float32,
             )
-        return np.expand_dims(self._vgg16_preprocess(image_array), axis=0)
+        return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _image_feature_stats(self) -> dict[str, float]:
         if self._image_statistics is None:

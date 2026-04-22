@@ -17,6 +17,7 @@
             "total_images": 241,
             "unique_images": 220,
             "duplicates_removed": 21,
+            "training_images": 194,
             "training_unique_images": 176,
             "validation_unique_images": 44
         },
@@ -24,6 +25,7 @@
             "total_images": 171,
             "unique_images": 87,
             "duplicates_removed": 84,
+            "training_images": 136,
             "training_unique_images": 70,
             "validation_unique_images": 17
         },
@@ -31,26 +33,27 @@
             "total_images": 295,
             "unique_images": 142,
             "duplicates_removed": 153,
+            "training_images": 235,
             "training_unique_images": 114,
             "validation_unique_images": 28
         }
     },
     "metrics": {
-        "loss": 0.4825614392757416,
-        "accuracy": 0.7865168539325843,
-        "precision_macro": 0.7281842818428185,
-        "recall_macro": 0.7338298955946015,
-        "f1_macro": 0.7301844875881387,
+        "loss": 0.4064084589481354,
+        "accuracy": 0.8202247191011236,
+        "precision_macro": 0.7723985890652557,
+        "recall_macro": 0.7806213394448688,
+        "f1_macro": 0.7749423842447097,
         "confusion_matrix": [
             [
-                39,
+                40,
                 3,
-                2
+                1
             ],
             [
                 2,
-                9,
-                6
+                11,
+                4
             ],
             [
                 0,
@@ -60,21 +63,21 @@
         ],
         "per_class": {
             "Abnormal heartbeat": {
-                "precision": 0.9512195121951219,
-                "recall": 0.8863636363636364,
-                "f1": 0.9176470588235294,
+                "precision": 0.9523809523809523,
+                "recall": 0.9090909090909091,
+                "f1": 0.9302325581395349,
                 "support": 44
             },
             "History of MI": {
-                "precision": 0.5,
-                "recall": 0.5294117647058824,
-                "f1": 0.5142857142857143,
+                "precision": 0.55,
+                "recall": 0.6470588235294118,
+                "f1": 0.5945945945945946,
                 "support": 17
             },
             "Normal Person": {
-                "precision": 0.7333333333333333,
+                "precision": 0.8148148148148148,
                 "recall": 0.7857142857142857,
-                "f1": 0.7586206896551724,
+                "f1": 0.7999999999999999,
                 "support": 28
             }
         },
@@ -84,6 +87,7 @@
                 "total_images": 241,
                 "unique_images": 220,
                 "duplicates_removed": 21,
+                "training_images": 194,
                 "training_unique_images": 176,
                 "validation_unique_images": 44
             },
@@ -91,6 +95,7 @@
                 "total_images": 171,
                 "unique_images": 87,
                 "duplicates_removed": 84,
+                "training_images": 136,
                 "training_unique_images": 70,
                 "validation_unique_images": 17
             },
@@ -98,6 +103,7 @@
                 "total_images": 295,
                 "unique_images": 142,
                 "duplicates_removed": 153,
+                "training_images": 235,
                 "training_unique_images": 114,
                 "validation_unique_images": 28
             }

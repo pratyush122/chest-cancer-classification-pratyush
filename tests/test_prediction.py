@@ -9,6 +9,7 @@ class FakeModel:
     def predict(self, input_tensor, verbose=0):
         assert input_tensor.shape == (1, 224, 224, 3)
         assert verbose == 0
+        assert float(input_tensor[0, 0, 0, 0]) == pytest.approx(16.061, abs=1e-3)
         return np.array([[0.9, 0.1]])
 
 
@@ -16,6 +17,7 @@ class FakeEcgModel:
     def predict(self, input_tensor, verbose=0):
         assert input_tensor.shape == (1, 224, 224, 3)
         assert verbose == 0
+        assert float(input_tensor[0, 0, 0, 0]) == pytest.approx(0.9216, abs=1e-3)
         return np.array([[0.1, 0.8, 0.1]])
 
 

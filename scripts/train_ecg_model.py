@@ -1,14 +1,15 @@
+import hashlib
 import json
-import shutil
+import random
 import urllib.request
 import zipfile
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
 
 from cnnClassifier.utils.common import create_directories, save_json
-from cnnClassifier.utils.data_utils import build_grouped_split_dataframe
 from cnnClassifier.utils.image_features import build_ood_profile, extract_image_statistics
 
 
@@ -102,13 +103,60 @@ def calculate_classification_metrics(
     }
 
 
+def _file_md5(path: Path) -> str:
+    return hashlib.md5(path.read_bytes()).hexdigest()
+
+
+def build_ecg_split_dataframe(dataset_dir: Path):
+    train_rows = []
+    validation_rows = []
+    duplicate_summary = {}
+
+    for class_dir in sorted(path for path in dataset_dir.iterdir() if path.is_dir()):
+        grouped_by_hash = defaultdict(list)
+        for image_path in sorted(class_dir.iterdir()):
+            if image_path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                continue
+            grouped_by_hash[_file_md5(image_path)].append(image_path)
+
+        unique_groups = list(grouped_by_hash.values())
+        rng = random.Random(SEED)
+        rng.shuffle(unique_groups)
+
+        if len(unique_groups) == 1:
+            validation_group_count = 1
+        else:
+            validation_group_count = max(1, round(len(unique_groups) * VALIDATION_SPLIT))
+            validation_group_count = min(validation_group_count, len(unique_groups) - 1)
+
+        validation_groups = unique_groups[:validation_group_count]
+        training_groups = unique_groups[validation_group_count:]
+
+        for group in training_groups:
+            for image_path in group:
+                train_rows.append({"filepath": str(image_path), "label": class_dir.name})
+
+        for group in validation_groups:
+            validation_rows.append({"filepath": str(group[0]), "label": class_dir.name})
+
+        total_images = sum(len(group) for group in unique_groups)
+        duplicate_summary[class_dir.name] = {
+            "total_images": total_images,
+            "unique_images": len(unique_groups),
+            "duplicates_removed": total_images - len(unique_groups),
+            "training_images": sum(len(group) for group in training_groups),
+            "training_unique_images": len(training_groups),
+            "validation_unique_images": len(validation_groups),
+        }
+
+    import pandas as pd
+
+    return pd.DataFrame(train_rows), pd.DataFrame(validation_rows), duplicate_summary
+
+
 def create_generators(dataset_dir: Path):
     preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
-    train_df, validation_df, split_summary = build_grouped_split_dataframe(
-        dataset_dir=dataset_dir,
-        validation_split=VALIDATION_SPLIT,
-        seed=SEED,
-    )
+    train_df, validation_df, split_summary = build_ecg_split_dataframe(dataset_dir)
 
     dataflow_kwargs = dict(
         target_size=IMAGE_SIZE,

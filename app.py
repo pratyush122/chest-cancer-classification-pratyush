@@ -114,7 +114,7 @@ def health_route():
     return jsonify(
         {
             "status": "ok",
-            "service": "chest-cancer-classifier",
+            "service": "medical-image-classifier",
             "author": PROJECT_AUTHOR,
             "backend": predictor.backend,
             "model_path": model_path,

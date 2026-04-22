@@ -59,17 +59,18 @@ Metrics from `ecg_scores.json`:
 
 ```json
 {
-  "loss": 0.4825614392757416,
-  "accuracy": 0.7865168539325843,
-  "precision_macro": 0.7281842818428185,
-  "recall_macro": 0.7338298955946015,
-  "f1_macro": 0.7301844875881387
+  "loss": 0.4064084589481354,
+  "accuracy": 0.8202247191011236,
+  "precision_macro": 0.7723985890652557,
+  "recall_macro": 0.7806213394448688,
+  "f1_macro": 0.7749423842447097
 }
 ```
 
 Important note:
 
-- The ECG dataset has only `89` validation images after duplicate-aware grouping.
+- The ECG dataset contains `707` raw images and `449` unique images after duplicate grouping.
+- The latest ECG training run used `565` training images and `89` unique validation images.
 - `History of MI` is the hardest class because it has the smallest unique-image count.
 - These are honest validation metrics from the actual trained artifacts included in this repo.
 
