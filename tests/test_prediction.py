@@ -126,6 +126,22 @@ def test_prediction_pipeline_supports_ecg_modality(monkeypatch, tmp_path):
     ]
 
 
+def test_ecg_tensor_preparation_matches_tflite_path(tmp_path):
+    image_path = tmp_path / "ecg_gradient.png"
+    gradient = np.tile(np.linspace(220, 255, 64, dtype=np.uint8), (64, 1))
+    gradient_rgb = np.stack([gradient, gradient, gradient], axis=2)
+    Image.fromarray(gradient_rgb).save(image_path)
+
+    pipeline = prediction.PredictionPipeline(str(image_path), modality="ecg")
+
+    image_tensor = pipeline._prepare_image_tensor()
+    tflite_tensor = pipeline._prepare_tflite_tensor()
+
+    assert image_tensor.shape == (1, 224, 224, 3)
+    assert tflite_tensor.shape == (1, 224, 224, 3)
+    np.testing.assert_allclose(image_tensor, tflite_tensor, atol=1e-6)
+
+
 def test_prediction_pipeline_rejects_unknown_modality(tmp_path):
     image_path = tmp_path / "scan.png"
     Image.new("RGB", (32, 32), color=(120, 120, 120)).save(image_path)

@@ -98,18 +98,25 @@ class PredictionPipeline:
             return self._mobilenet_v2_preprocess(image_array)
         return self._vgg16_preprocess(image_array)
 
+    def _load_resized_image_array(self) -> np.ndarray:
+        resampling = (
+            Image.Resampling.BILINEAR
+            if self.config.preprocessing == "mobilenet_v2"
+            else Image.Resampling.NEAREST
+        )
+        with Image.open(self.input_image_path) as uploaded_image:
+            image_array = np.asarray(
+                uploaded_image.convert("RGB").resize((224, 224), resampling),
+                dtype=np.float32,
+            )
+        return image_array
+
     def _prepare_image_tensor(self) -> np.ndarray:
-        from tensorflow.keras.preprocessing import image
-        loaded_image = image.load_img(self.input_image_path, target_size=(224, 224))
-        image_array = image.img_to_array(loaded_image)
+        image_array = self._load_resized_image_array()
         return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _prepare_tflite_tensor(self) -> np.ndarray:
-        with Image.open(self.input_image_path) as uploaded_image:
-            image_array = np.asarray(
-                uploaded_image.convert("RGB").resize((224, 224)),
-                dtype=np.float32,
-            )
+        image_array = self._load_resized_image_array()
         return np.expand_dims(self._preprocess_image(image_array), axis=0)
 
     def _image_feature_stats(self) -> dict[str, float]:

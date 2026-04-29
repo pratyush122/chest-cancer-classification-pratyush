@@ -316,7 +316,6 @@ def save_ecg_inference_profile(train_df):
 
 def export_tflite_model(model):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_model = converter.convert()
     TFLITE_PATH.write_bytes(tflite_model)
 
