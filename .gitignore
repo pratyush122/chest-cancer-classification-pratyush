@@ -165,3 +165,8 @@ mlflow.db
 mlruns/
 
 .vercel
+
+# Local review materials
+ppt/
+report extra/
+~$*.pptx
