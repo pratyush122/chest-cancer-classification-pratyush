@@ -37,6 +37,7 @@ INITIAL_EPOCHS = 8
 FINE_TUNE_EPOCHS = 4
 LEARNING_RATE = 1e-4
 FINE_TUNE_LEARNING_RATE = 1e-5
+NORMAL_PERSON_TARGET_RATIO = 0.8
 
 
 def ensure_dataset() -> Path:
@@ -155,21 +156,40 @@ def build_ecg_split_dataframe(dataset_dir: Path):
     return pd.DataFrame(train_rows), pd.DataFrame(validation_rows), duplicate_summary
 
 
-def create_generators(dataset_dir: Path):
-    preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
-    train_df, validation_df, split_summary = build_ecg_split_dataframe(dataset_dir)
-    max_class_count = int(train_df["label"].value_counts().max())
+def build_balanced_training_dataframe(train_df):
+    class_counts = train_df["label"].value_counts().to_dict()
+    max_class_count = max(class_counts.values())
+    median_class_count = int(round(float(np.median(list(class_counts.values())))))
+    normal_target_count = int(round(max_class_count * NORMAL_PERSON_TARGET_RATIO))
+
+    target_counts = {
+        label: max(count, median_class_count)
+        for label, count in class_counts.items()
+    }
+    if "Normal Person" in target_counts:
+        target_counts["Normal Person"] = max(
+            target_counts["Normal Person"],
+            normal_target_count,
+        )
+
     balanced_train_df = (
         train_df.groupby("label", group_keys=False)
         .apply(
             lambda group: group.sample(
-                n=max_class_count,
-                replace=len(group) < max_class_count,
+                n=target_counts[group.name],
+                replace=len(group) < target_counts[group.name],
                 random_state=SEED,
             )
         )
         .reset_index(drop=True)
     )
+    return balanced_train_df, target_counts
+
+
+def create_generators(dataset_dir: Path):
+    preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
+    train_df, validation_df, split_summary = build_ecg_split_dataframe(dataset_dir)
+    balanced_train_df, target_counts = build_balanced_training_dataframe(train_df)
 
     dataflow_kwargs = dict(
         target_size=IMAGE_SIZE,
@@ -202,7 +222,7 @@ def create_generators(dataset_dir: Path):
         **dataflow_kwargs,
     )
 
-    class_counts = balanced_train_df["label"].value_counts().to_dict()
+    class_counts = target_counts
     total_samples = float(len(balanced_train_df))
     class_name_to_index = train_generator.class_indices
     class_weight = {
