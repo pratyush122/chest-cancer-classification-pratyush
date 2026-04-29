@@ -133,8 +133,9 @@ def build_ecg_split_dataframe(dataset_dir: Path):
         training_groups = unique_groups[validation_group_count:]
 
         for group in training_groups:
-            for image_path in group:
-                train_rows.append({"filepath": str(image_path), "label": class_dir.name})
+            # Keep one canonical image per duplicate group so the model does not
+            # overfit repeated ECG renderings of the same trace.
+            train_rows.append({"filepath": str(group[0]), "label": class_dir.name})
 
         for group in validation_groups:
             validation_rows.append({"filepath": str(group[0]), "label": class_dir.name})
@@ -144,7 +145,7 @@ def build_ecg_split_dataframe(dataset_dir: Path):
             "total_images": total_images,
             "unique_images": len(unique_groups),
             "duplicates_removed": total_images - len(unique_groups),
-            "training_images": sum(len(group) for group in training_groups),
+            "training_images": len(training_groups),
             "training_unique_images": len(training_groups),
             "validation_unique_images": len(validation_groups),
         }
@@ -157,6 +158,18 @@ def build_ecg_split_dataframe(dataset_dir: Path):
 def create_generators(dataset_dir: Path):
     preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
     train_df, validation_df, split_summary = build_ecg_split_dataframe(dataset_dir)
+    max_class_count = int(train_df["label"].value_counts().max())
+    balanced_train_df = (
+        train_df.groupby("label", group_keys=False)
+        .apply(
+            lambda group: group.sample(
+                n=max_class_count,
+                replace=len(group) < max_class_count,
+                random_state=SEED,
+            )
+        )
+        .reset_index(drop=True)
+    )
 
     dataflow_kwargs = dict(
         target_size=IMAGE_SIZE,
@@ -179,7 +192,7 @@ def create_generators(dataset_dir: Path):
     )
 
     train_generator = train_datagenerator.flow_from_dataframe(
-        dataframe=train_df,
+        dataframe=balanced_train_df,
         shuffle=True,
         **dataflow_kwargs,
     )
@@ -189,8 +202,8 @@ def create_generators(dataset_dir: Path):
         **dataflow_kwargs,
     )
 
-    class_counts = train_df["label"].value_counts().to_dict()
-    total_samples = float(len(train_df))
+    class_counts = balanced_train_df["label"].value_counts().to_dict()
+    total_samples = float(len(balanced_train_df))
     class_name_to_index = train_generator.class_indices
     class_weight = {
         class_name_to_index[label]: total_samples / (len(class_counts) * count)
